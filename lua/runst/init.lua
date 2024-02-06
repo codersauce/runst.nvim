@@ -41,9 +41,8 @@ local function open_buffer()
 	local buffer_visible = vim.api.nvim_call_function("bufwinnr", { buffer_number }) ~= -1
 
 	if buffer_number == -1 or not buffer_visible then
-		-- Create a new buffer with the name "AUTOTEST_OUTPUT".
 		-- Same name will reuse the current buffer.
-		vim.api.nvim_command("botright split AUTOTEST_OUTPUT")
+		vim.api.nvim_command("botright split RUNST_OUTPUT")
 
 		-- Collect the buffer's number.
 		buffer_number = vim.api.nvim_get_current_buf()
@@ -83,7 +82,6 @@ function M.run_test()
 	end
 
 	open_buffer()
-	vim.api.nvim_buf_set_lines(buffer_number, 0, -1, false, { "Running test: " .. test_name })
 	vim.fn.jobstart("cargo test -- " .. test_name, {
 		stdout_buffered = true,
 		on_stdout = log,
