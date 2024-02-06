@@ -1,5 +1,6 @@
 local M = {}
 local buffer_number = -1
+local last_test = nil
 
 function M.setup(opts)
 	opts = opts or {}
@@ -36,7 +37,7 @@ local function current_test_name()
 	return nil
 end
 
-local function open_buffer()
+local function open_buffer(cmd)
 	-- Get a boolean that tells us if the buffer number is visible anymore.
 	local buffer_visible = vim.api.nvim_call_function("bufwinnr", { buffer_number }) ~= -1
 
@@ -46,7 +47,28 @@ local function open_buffer()
 
 		-- Collect the buffer's number.
 		buffer_number = vim.api.nvim_get_current_buf()
+
+		-- Logs the nvim_command
+		append_to_buffer(buffer_number, "Running: " .. cmd)
 	end
+end
+
+function append_to_buffer(bufnr, text)
+	-- Check if the buffer exists and is loaded
+	if not vim.api.nvim_buf_is_loaded(bufnr) then
+		print("Buffer is not loaded.")
+		return
+	end
+
+	-- Determine the last line of the buffer
+	local line_count = vim.api.nvim_buf_line_count(bufnr)
+
+	-- Append the text to the buffer
+	-- If `text` is a string, convert it to a table with one element
+	if type(text) == "string" then
+		text = { text }
+	end
+	vim.api.nvim_buf_set_lines(bufnr, line_count, -1, false, text)
 end
 
 local function log(_, data)
@@ -81,8 +103,26 @@ function M.run_test()
 		return
 	end
 
-	open_buffer()
-	vim.fn.jobstart("cargo test -- " .. test_name, {
+	last_test = test_name
+
+	local cmd = "cargo test -- " .. test_name
+	open_buffer(cmd)
+	vim.fn.jobstart(cmd, {
+		stdout_buffered = true,
+		on_stdout = log,
+		on_stderr = log,
+	})
+end
+
+function M.run_last_test()
+	if last_test == nil then
+		print("No last test found")
+		return
+	end
+
+	local cmd = "cargo test -- " .. last_test
+	open_buffer(cmd)
+	vim.fn.jobstart(cmd, {
 		stdout_buffered = true,
 		on_stdout = log,
 		on_stderr = log,
@@ -90,5 +130,11 @@ function M.run_test()
 end
 
 vim.api.nvim_set_keymap("n", "<leader>t", "<cmd>lua require'runst'.run_test()<cr>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap(
+	"n",
+	"<leader>T",
+	"<cmd>lua require'runst'.run_last_test()<cr>",
+	{ noremap = true, silent = true }
+)
 
 return M
