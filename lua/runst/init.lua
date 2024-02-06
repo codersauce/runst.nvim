@@ -105,12 +105,12 @@ function M.run_test()
 
 	last_test = test_name
 
-	local cmd = "cargo test -- " .. test_name
+	local cmd = "cargo test -- " .. test_name .. " 2>&1"
 	open_buffer(cmd)
 	vim.fn.jobstart(cmd, {
-		stdout_buffered = true,
+		stdout_buffered = false,
 		on_stdout = log,
-		on_stderr = log,
+		-- on_stderr = log,
 	})
 end
 
@@ -120,12 +120,12 @@ function M.run_last_test()
 		return
 	end
 
-	local cmd = "cargo test -- " .. last_test
+	local cmd = "cargo test -- " .. last_test .. " 2>&1"
 	open_buffer(cmd)
 	vim.fn.jobstart(cmd, {
-		stdout_buffered = true,
+		stdout_buffered = false,
 		on_stdout = log,
-		on_stderr = log,
+		-- on_stderr = log,
 	})
 end
 
