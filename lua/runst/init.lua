@@ -37,23 +37,7 @@ local function current_test_name()
 	return nil
 end
 
-local function open_buffer(cmd)
-	-- Get a boolean that tells us if the buffer number is visible anymore.
-	local buffer_visible = vim.api.nvim_call_function("bufwinnr", { buffer_number }) ~= -1
-
-	if buffer_number == -1 or not buffer_visible then
-		-- Same name will reuse the current buffer.
-		vim.api.nvim_command("botright split RUNST_OUTPUT")
-
-		-- Collect the buffer's number.
-		buffer_number = vim.api.nvim_get_current_buf()
-
-		-- Logs the nvim_command
-		append_to_buffer(buffer_number, "Running: " .. cmd)
-	end
-end
-
-function append_to_buffer(bufnr, text)
+local function append_to_buffer(bufnr, text)
 	-- Check if the buffer exists and is loaded
 	if not vim.api.nvim_buf_is_loaded(bufnr) then
 		print("Buffer is not loaded.")
@@ -69,6 +53,19 @@ function append_to_buffer(bufnr, text)
 		text = { text }
 	end
 	vim.api.nvim_buf_set_lines(bufnr, line_count, -1, false, text)
+end
+
+local function open_buffer(cmd)
+	local buffer_visible = vim.api.nvim_call_function("bufwinnr", { buffer_number }) ~= -1
+
+	if buffer_number == -1 or not buffer_visible then
+		vim.api.nvim_command("botright split " .. last_test)
+		buffer_number = vim.api.nvim_get_current_buf()
+
+		append_to_buffer(buffer_number, "Running: " .. cmd)
+		vim.api.nvim_command("resize 10")
+		vim.api.nvim_command("wincmd p")
+	end
 end
 
 local function log(_, data)
@@ -95,6 +92,16 @@ local function log(_, data)
 	end
 end
 
+local function run_test(test_name)
+	local cmd = "cargo test -- " .. test_name .. " --nocapture 2>&1"
+	open_buffer(cmd)
+	vim.fn.jobstart(cmd, {
+		stdout_buffered = false,
+		on_stdout = log,
+		-- on_stderr = log,
+	})
+end
+
 function M.run_test()
 	local test_name = current_test_name()
 
@@ -104,14 +111,7 @@ function M.run_test()
 	end
 
 	last_test = test_name
-
-	local cmd = "cargo test -- " .. test_name .. " 2>&1"
-	open_buffer(cmd)
-	vim.fn.jobstart(cmd, {
-		stdout_buffered = false,
-		on_stdout = log,
-		-- on_stderr = log,
-	})
+	run_test(test_name)
 end
 
 function M.run_last_test()
@@ -120,13 +120,7 @@ function M.run_last_test()
 		return
 	end
 
-	local cmd = "cargo test -- " .. last_test .. " 2>&1"
-	open_buffer(cmd)
-	vim.fn.jobstart(cmd, {
-		stdout_buffered = false,
-		on_stdout = log,
-		-- on_stderr = log,
-	})
+	run_test(last_test)
 end
 
 vim.api.nvim_set_keymap("n", "<leader>t", "<cmd>lua require'runst'.run_test()<cr>", { noremap = true, silent = true })
