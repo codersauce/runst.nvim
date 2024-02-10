@@ -123,12 +123,20 @@ function M.run_last_test()
 	run_test(last_test)
 end
 
-vim.api.nvim_set_keymap("n", "<leader>t", "<cmd>lua require'runst'.run_test()<cr>", { noremap = true, silent = true })
+function M.close()
+	if buffer_number ~= -1 then
+		vim.api.nvim_command("bd! " .. buffer_number)
+		buffer_number = -1
+	end
+end
+
+vim.api.nvim_set_keymap("n", "<leader>tt", "<cmd>lua require'runst'.run_test()<cr>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap(
 	"n",
-	"<leader>T",
+	"<leader>tl",
 	"<cmd>lua require'runst'.run_last_test()<cr>",
 	{ noremap = true, silent = true }
 )
+vim.api.nvim_set_keymap("n", "<leader>tc", "<cmd>lua require'runst'.close()<cr>", { noremap = true, silent = true })
 
 return M
