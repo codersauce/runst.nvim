@@ -40,3 +40,26 @@ use({
     end
 })
 ```
+
+## Keymaps
+
+Default keymaps:
+
+`<leader>tt` Runst the test under cursor  
+`<leader>tl` Re-runs last test, if any  
+`<leader>tc` Closes test output buffer
+
+Reassigning keymaps:
+
+Change the default keymaps to your liking like below
+
+```lua
+vim.api.nvim_set_keymap("n", "<leader>tt", "<cmd>lua require'runst'.run_test()<cr>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap(
+	"n",
+	"<leader>tl",
+	"<cmd>lua require'runst'.run_last_test()<cr>",
+	{ noremap = true, silent = true }
+)
+vim.api.nvim_set_keymap("n", "<leader>tc", "<cmd>lua require'runst'.close()<cr>", { noremap = true, silent = true })
+```
